@@ -131,7 +131,7 @@ func GC(ctx context.Context, bs bstore.GCBlockstore, dstor dstore.Datastore, pn 
 // Descendants recursively finds all the descendants of the given roots and
 // adds them to the given cid.Set, using the provided dag.GetLinks function
 // to walk the tree.
-func Descendants(ctx context.Context, getLinks dag.GetLinks, set *cid.Set, roots []cid.Cid) error {
+func Descendants(ctx context.Context, getLinks dag.GetLinks, set Set, roots []cid.Cid) error {
 	verifyGetLinks := func(ctx context.Context, c cid.Cid) ([]*ipld.Link, error) {
 		err := verifcid.ValidateCid(c)
 		if err != nil {
@@ -167,11 +167,15 @@ func Descendants(ctx context.Context, getLinks dag.GetLinks, set *cid.Set, roots
 
 // ColoredSet computes the set of nodes in the graph that are pinned by the
 // pins in the given pinner.
-func ColoredSet(ctx context.Context, pn pin.Pinner, ng ipld.NodeGetter, bestEffortRoots []cid.Cid, output chan<- Result) (*cid.Set, error) {
+func ColoredSet(ctx context.Context, pn pin.Pinner, ng ipld.NodeGetter, bestEffortRoots []cid.Cid, output chan<- Result) (Set, error) {
 	// KeySet currently implemented in memory, in the future, may be bloom filter or
 	// disk backed to conserve memory.
 	errors := false
-	gcs := cid.NewSet()
+	//gcs := cid.NewSet()
+	gcs, err := NewDefaultBloomFilter()
+	if err != nil {
+		return nil, err
+	}
 	getLinks := func(ctx context.Context, cid cid.Cid) ([]*ipld.Link, error) {
 		links, err := ipld.GetLinks(ctx, ng, cid)
 		if err != nil {
